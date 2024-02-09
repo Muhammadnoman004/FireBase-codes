@@ -12,7 +12,21 @@ import {
     signOut,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+// FIRESTORE DATABASE IMPORT
+
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    doc,
+    onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+
 const auth = getAuth(app);
+
+// Initialize Cloud Firestore and get a reference to the service
+const db = getFirestore(app);
 
 // SIGN UP 
 
@@ -130,3 +144,34 @@ Logoutbtn.addEventListener("click", () => {
         console.log(error);
     });
 })
+
+//////////////////////////////....Authentication End....//////////////////////////////////
+
+// ADD DATA IN DATABASE
+
+const addData = async () => {
+    try {
+        const docRef = await addDoc(collection(db, "users"), {
+            Email: "any value",
+            Password: "any value",
+            Date: new Date().toLocaleString()
+        });
+        console.log("Document written with ID: ", docRef.id);
+    } catch (e) {
+        console.error("Error adding document: ", e);
+    }
+
+}
+
+// GET DATA FROM DATABASE
+
+const getdata = () => {
+
+    onSnapshot(collection(db, "users"), (Alldata) => {
+        console.log(Alldata);
+        Alldata.docChanges().forEach((Singledata) => {
+            console.log(Singledata.doc.id);
+        })
+    })
+}
+getdata()
