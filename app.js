@@ -19,14 +19,28 @@ import {
     collection,
     addDoc,
     doc,
-    onSnapshot
+    onSnapshot,
+    deleteDoc,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// STORAGE IMPORT
 
+import {
+    getStorage,
+    ref,
+    uploadBytesResumable,
+    getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);
 
 // Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
+
+// Initialize storage and get a reference to the service
+const storage = getStorage();
 
 // SIGN UP 
 
@@ -75,7 +89,7 @@ if (Lbtn) {
     })
 }
 
-// SIGN UP WITH GOOGLE
+// SIGN IN WITH GOOGLE
 
 let googlebtn = document.querySelector("#googlebtn");
 
@@ -165,13 +179,97 @@ const addData = async () => {
 
 // GET DATA FROM DATABASE
 
+let ids = [];
 const getdata = () => {
 
     onSnapshot(collection(db, "users"), (Alldata) => {
         console.log(Alldata);
         Alldata.docChanges().forEach((Singledata) => {
             console.log(Singledata.doc.id);
+            ids.push(Singledata.doc.id)
+            console.log(ids);
+
         })
     })
 }
 getdata()
+
+// DELETE DATA FROM DATABASE
+
+let deletebtn = document.querySelector("#delbtn");
+
+deletebtn.addEventListener("click", async (id) => {
+    await deleteDoc(doc(db, "users", id));
+
+})
+
+// UPDATE DATA FROM DATABASE
+
+const UpdateData = async (id) => {
+    await updateDoc(doc(db, "users", id), {
+        Password: input.value,
+        Date: new Date().toLocaleString()
+    });
+}
+
+//////////////////////////////....FireStore Database End....//////////////////////////////////
+
+// STORAGE
+
+let getpicture = document.querySelector("#getpicture");
+let imageDiv = document.querySelector(".imageDiv");
+let image = document.querySelector("#image");
+let imageURL;
+
+const downloadImageUrl = (file) => {
+    return new Promise((resolve, reject) => {
+        const restaurantImageRef = ref(storage, `images/${file.name}`
+        );
+        const uploadTask = uploadBytesResumable(restaurantImageRef, file);
+
+        uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+                const progress =
+                    (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log('Upload is ' + progress + '% done');
+
+                switch (snapshot.state) {
+                    case "paused":
+                        console.log('Upload is paused');
+                        break;
+                    case "running":
+                        console.log("running");
+                        break;
+                }
+            },
+            (error) => {
+                reject(error);
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref)
+                    .then((downloadURL) => {
+                        resolve(downloadURL);
+                    })
+                    .catch((error) => {
+                        reject(error);
+                    });
+            }
+        );
+    });
+};
+
+getpicture.addEventListener("change", async () => {
+    if (getpicture.files.length > 0) {
+        const file = getpicture.files[0];
+        imageDiv.style.display = "block";
+        imageURL = await downloadImageUrl(file);
+        if (imageURL) {
+            image.src = imageURL;
+        }
+    }
+})
+
+//////////////////////////////....Storage End....//////////////////////////////////
+
+////////////////////////////..A___L___M___O___S___T .. C___O___D___E..////////////////////////////
